@@ -172,7 +172,28 @@ export function seedDatabase(): void {
   // 施工日誌
   db.insert(constructionLogs)
     .values([
-      { projectId: 1, date: '2026-05-12', weather: 'sunny', temperature: '28°C', workforce: 24, summary: '地下二層樓板鋼筋綁紮', content: '完成 B2 東側樓板鋼筋綁紮約 60%，明日續作西側。', recordedBy: '陳主任' },
+      {
+        projectId: 1,
+        date: '2026-05-12',
+        weather: 'sunny',
+        temperature: '28°C',
+        workforce: 24,
+        summary: '地下二層樓板鋼筋綁紮',
+        content: '完成 B2 東側樓板鋼筋綁紮約 60%，明日續作西側。',
+        recordedBy: '陳主任',
+        itemsJson: JSON.stringify([
+          { name: '樓板鋼筋綁紮', location: 'B2 東側', quantity: '60', unit: '%', note: '進度正常' },
+        ]),
+        laborJson: JSON.stringify([
+          { trade: '鋼筋工', count: 16, note: '' },
+          { trade: '模板工', count: 6, note: '' },
+          { trade: '普工', count: 2, note: '' },
+        ]),
+        equipmentJson: JSON.stringify([{ name: '塔吊', count: 1, hours: '8 小時', note: '' }]),
+        inspectionsJson: JSON.stringify([
+          { category: '鋼筋工程', item: '鋼筋間距與保護層查驗', location: 'B2 東側樓板', result: 'pass', inspector: '王工程師', note: '' },
+        ]),
+      },
       { projectId: 1, date: '2026-05-13', weather: 'cloudy', temperature: '26°C', workforce: 22, summary: '地下二層樓板混凝土澆置', content: 'B2 東側樓板混凝土澆置完成，養護中。', recordedBy: '陳主任' },
       { projectId: 2, date: '2026-05-13', weather: 'rainy', temperature: '24°C', workforce: 12, summary: '舊建物拆除作業', content: '因雨暫停外牆拆除，改進行室內隔間清運。', recordedBy: '李工程師' },
     ])

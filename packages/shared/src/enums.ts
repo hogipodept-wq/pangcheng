@@ -77,3 +77,11 @@ export type WeatherType = (typeof WEATHER_TYPES)[number];
 // 通知類型
 export const NOTIFICATION_TYPES = ['info', 'warning', 'approval', 'budget_alert'] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
+
+// 自主檢查結果
+export const INSPECTION_RESULTS = ['pass', 'fail', 'pending', 'na'] as const;
+export type InspectionResult = (typeof INSPECTION_RESULTS)[number];
+
+// 施工日誌狀態
+export const LOG_STATUSES = ['draft', 'submitted'] as const;
+export type LogStatus = (typeof LOG_STATUSES)[number];

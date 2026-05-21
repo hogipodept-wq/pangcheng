@@ -20,13 +20,32 @@ import {
 import { uploadFile } from '../lib/upload';
 import {
   formatDate,
-  WEATHER_TYPES,
   WEATHER_LABELS,
   PHOTO_CATEGORIES,
   PHOTO_CATEGORY_LABELS,
+  INSPECTION_RESULT_LABELS,
+  LOG_STATUS_LABELS,
   type WeatherType,
   type PhotoCategory,
+  type InspectionResult,
+  type LogStatus,
 } from '@pangcheng/shared';
+
+function Info({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div>
+      <p className="text-xs text-gray-400">{label}</p>
+      <p className="mt-0.5 text-sm text-ink">{value || '-'}</p>
+    </div>
+  );
+}
+
+const resultTone: Record<InspectionResult, 'green' | 'red' | 'amber' | 'gray'> = {
+  pass: 'green',
+  fail: 'red',
+  pending: 'amber',
+  na: 'gray',
+};
 
 export function ConstructionLogDetail() {
   const { id } = useParams();
@@ -35,28 +54,13 @@ export function ConstructionLogDetail() {
   const utils = trpc.useUtils();
   const { data, isLoading } = trpc.constructionLog.get.useQuery({ id: logId });
 
-  const [editOpen, setEditOpen] = useState(false);
   const [delOpen, setDelOpen] = useState(false);
   const [photoOpen, setPhotoOpen] = useState(false);
-  const [form, setForm] = useState({
-    date: '',
-    weather: 'sunny' as WeatherType,
-    temperature: '',
-    workforce: 0,
-    summary: '',
-    content: '',
-  });
   const [photo, setPhoto] = useState({ category: 'during' as PhotoCategory, title: '', description: '' });
   const [picked, setPicked] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [photoError, setPhotoError] = useState('');
 
-  const update = trpc.constructionLog.update.useMutation({
-    onSuccess: () => {
-      void utils.constructionLog.get.invalidate({ id: logId });
-      setEditOpen(false);
-    },
-  });
   const remove = trpc.constructionLog.delete.useMutation({
     onSuccess: () => navigate('/construction-logs'),
   });
@@ -112,20 +116,12 @@ export function ConstructionLogDetail() {
         subtitle={data.projectName ?? ''}
         actions={
           <>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setForm({
-                  date: data.date,
-                  weather: data.weather as WeatherType,
-                  temperature: data.temperature ?? '',
-                  workforce: data.workforce,
-                  summary: data.summary ?? '',
-                  content: data.content ?? '',
-                });
-                setEditOpen(true);
-              }}
-            >
+            {data.status === 'draft' ? (
+              <Badge tone="gray">{LOG_STATUS_LABELS.draft}</Badge>
+            ) : (
+              <Badge tone="green">{LOG_STATUS_LABELS[data.status as LogStatus] ?? data.status}</Badge>
+            )}
+            <Button variant="outline" onClick={() => navigate(`/construction-logs/${logId}/edit`)}>
               <Pencil className="h-4 w-4" /> 編輯
             </Button>
             <Button variant="danger" onClick={() => setDelOpen(true)}>
@@ -136,33 +132,157 @@ export function ConstructionLogDetail() {
       />
 
       <Card>
-        <SectionTitle>日誌內容</SectionTitle>
+        <SectionTitle>基本資料</SectionTitle>
         <div className="grid grid-cols-2 gap-4 p-4 lg:grid-cols-4">
           <div>
             <p className="text-xs text-gray-400">天氣</p>
             <Badge tone="blue">{WEATHER_LABELS[data.weather as WeatherType] ?? data.weather}</Badge>
           </div>
-          <div>
-            <p className="text-xs text-gray-400">溫度</p>
-            <p className="mt-0.5 text-sm text-ink">{data.temperature || '-'}</p>
+          <Info label="溫度" value={data.temperature} />
+          <Info label="出工人數" value={`${data.workforce} 人`} />
+          <Info label="記錄人" value={data.recordedBy} />
+          <div className="col-span-2 lg:col-span-4">
+            <Info label="今日施工概要" value={data.summary} />
           </div>
-          <div>
-            <p className="text-xs text-gray-400">出工人數</p>
-            <p className="mt-0.5 text-sm text-ink">{data.workforce} 人</p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-400">記錄人</p>
-            <p className="mt-0.5 text-sm text-ink">{data.recordedBy || '-'}</p>
-          </div>
-        </div>
-        <div className="border-t border-gray-100 p-4">
-          <p className="text-xs text-gray-400">工作摘要</p>
-          <p className="mt-0.5 text-sm font-medium text-ink">{data.summary || '-'}</p>
-          <p className="mt-3 text-xs text-gray-400">詳細內容</p>
-          <p className="mt-0.5 whitespace-pre-wrap text-sm text-gray-700">{data.content || '-'}</p>
         </div>
       </Card>
 
+      {/* 施工項目 */}
+      <Card className="mt-3">
+        <SectionTitle>施工項目（{data.items.length}）</SectionTitle>
+        {data.items.length === 0 ? (
+          <EmptyState title="尚無施工項目" />
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50 text-left text-xs text-gray-500">
+                <th className="px-4 py-2">施工項目</th>
+                <th className="px-4 py-2">施工部位</th>
+                <th className="px-4 py-2">數量</th>
+                <th className="px-4 py-2">備註</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.items.map((it, i) => (
+                <tr key={i} className="border-b border-gray-50">
+                  <td className="px-4 py-2 font-medium text-ink">{it.name}</td>
+                  <td className="px-4 py-2 text-gray-600">{it.location || '-'}</td>
+                  <td className="px-4 py-2 text-gray-600">
+                    {it.quantity ? `${it.quantity} ${it.unit}` : '-'}
+                  </td>
+                  <td className="px-4 py-2 text-gray-500">{it.note || '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Card>
+
+      <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
+        {/* 人力配置 */}
+        <Card>
+          <SectionTitle>人力配置（出工 {data.workforce} 人）</SectionTitle>
+          {data.labor.length === 0 ? (
+            <EmptyState title="尚無人力配置" />
+          ) : (
+            <div className="divide-y divide-gray-50">
+              {data.labor.map((it, i) => (
+                <div key={i} className="flex items-center justify-between px-4 py-2.5">
+                  <span className="text-sm text-ink">{it.trade}</span>
+                  <span className="text-sm font-medium text-gray-600">{it.count} 人</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        {/* 機具使用 */}
+        <Card>
+          <SectionTitle>機具使用（{data.equipment.length}）</SectionTitle>
+          {data.equipment.length === 0 ? (
+            <EmptyState title="尚無機具使用紀錄" />
+          ) : (
+            <div className="divide-y divide-gray-50">
+              {data.equipment.map((it, i) => (
+                <div key={i} className="flex items-center justify-between px-4 py-2.5">
+                  <span className="text-sm text-ink">{it.name}</span>
+                  <span className="text-sm text-gray-500">
+                    {it.count} 台 {it.hours && `· ${it.hours}`}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
+
+      {/* 材料進場 */}
+      <Card className="mt-3">
+        <SectionTitle>材料進場（{data.materials.length}）</SectionTitle>
+        {data.materials.length === 0 ? (
+          <EmptyState title="尚無材料進場紀錄" />
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50 text-left text-xs text-gray-500">
+                <th className="px-4 py-2">材料名稱</th>
+                <th className="px-4 py-2">規格</th>
+                <th className="px-4 py-2">數量</th>
+                <th className="px-4 py-2">供應廠商</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.materials.map((it, i) => (
+                <tr key={i} className="border-b border-gray-50">
+                  <td className="px-4 py-2 font-medium text-ink">{it.name}</td>
+                  <td className="px-4 py-2 text-gray-600">{it.spec || '-'}</td>
+                  <td className="px-4 py-2 text-gray-600">
+                    {it.quantity ? `${it.quantity} ${it.unit}` : '-'}
+                  </td>
+                  <td className="px-4 py-2 text-gray-500">{it.supplier || '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Card>
+
+      {/* 自主檢查 */}
+      <Card className="mt-3">
+        <SectionTitle>自主檢查（{data.inspections.length}）</SectionTitle>
+        {data.inspections.length === 0 ? (
+          <EmptyState title="尚無自主檢查項目" />
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50 text-left text-xs text-gray-500">
+                <th className="px-4 py-2">類別</th>
+                <th className="px-4 py-2">檢查項目</th>
+                <th className="px-4 py-2">部位</th>
+                <th className="px-4 py-2">檢查人員</th>
+                <th className="px-4 py-2">結果</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.inspections.map((it, i) => (
+                <tr key={i} className="border-b border-gray-50">
+                  <td className="px-4 py-2 text-gray-600">{it.category || '-'}</td>
+                  <td className="px-4 py-2 font-medium text-ink">{it.item}</td>
+                  <td className="px-4 py-2 text-gray-600">{it.location || '-'}</td>
+                  <td className="px-4 py-2 text-gray-600">{it.inspector || '-'}</td>
+                  <td className="px-4 py-2">
+                    <Badge tone={resultTone[it.result as InspectionResult] ?? 'gray'}>
+                      {INSPECTION_RESULT_LABELS[it.result as InspectionResult] ?? it.result}
+                    </Badge>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Card>
+
+      {/* 施工照片 */}
       <Card className="mt-3">
         <SectionTitle
           action={
@@ -178,21 +298,14 @@ export function ConstructionLogDetail() {
         ) : (
           <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 lg:grid-cols-4">
             {data.photos.map((p) => (
-              <div key={p.id} className="group overflow-hidden rounded-lg border border-gray-200">
+              <div key={p.id} className="overflow-hidden rounded-lg border border-gray-200">
                 <a href={p.photoUrl} target="_blank" rel="noreferrer">
-                  <img
-                    src={p.photoUrl}
-                    alt={p.title ?? '施工照片'}
-                    className="h-32 w-full object-cover"
-                  />
+                  <img src={p.photoUrl} alt={p.title ?? '施工照片'} className="h-32 w-full object-cover" />
                 </a>
                 <div className="flex items-center justify-between px-2 py-1.5">
-                  <div className="min-w-0">
-                    <Badge tone="slate">
-                      {PHOTO_CATEGORY_LABELS[p.category as PhotoCategory] ?? p.category}
-                    </Badge>
-                    {p.title && <p className="mt-0.5 truncate text-xs text-gray-500">{p.title}</p>}
-                  </div>
+                  <Badge tone="slate">
+                    {PHOTO_CATEGORY_LABELS[p.category as PhotoCategory] ?? p.category}
+                  </Badge>
                   <button
                     onClick={() => delPhoto.mutate({ id: p.id })}
                     className="rounded p-1 text-gray-300 hover:text-brand-600"
@@ -206,87 +319,19 @@ export function ConstructionLogDetail() {
         )}
       </Card>
 
-      {/* 編輯日誌 */}
-      <Modal
-        open={editOpen}
-        onClose={() => setEditOpen(false)}
-        title="編輯施工日誌"
-        footer={
-          <>
-            <Button variant="outline" onClick={() => setEditOpen(false)}>
-              取消
-            </Button>
-            <Button
-              loading={update.isPending}
-              onClick={() =>
-                update.mutate({
-                  id: logId,
-                  projectId: data.projectId,
-                  date: form.date,
-                  weather: form.weather,
-                  temperature: form.temperature,
-                  workforce: Number(form.workforce),
-                  summary: form.summary,
-                  content: form.content,
-                })
-              }
-            >
-              儲存
-            </Button>
-          </>
-        }
-      >
-        <div className="space-y-3">
-          <div className="grid grid-cols-3 gap-3">
-            <Field label="日期">
-              <Input
-                type="date"
-                value={form.date}
-                onChange={(e) => setForm({ ...form, date: e.target.value })}
-              />
-            </Field>
-            <Field label="天氣">
-              <Select
-                value={form.weather}
-                onChange={(e) => setForm({ ...form, weather: e.target.value as WeatherType })}
-              >
-                {WEATHER_TYPES.map((w) => (
-                  <option key={w} value={w}>
-                    {WEATHER_LABELS[w]}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <Field label="溫度">
-              <Input
-                value={form.temperature}
-                onChange={(e) => setForm({ ...form, temperature: e.target.value })}
-              />
-            </Field>
-          </div>
-          <Field label="出工人數">
-            <Input
-              type="number"
-              value={form.workforce}
-              onChange={(e) => setForm({ ...form, workforce: Number(e.target.value) })}
-            />
-          </Field>
-          <Field label="工作摘要">
-            <Input
-              value={form.summary}
-              onChange={(e) => setForm({ ...form, summary: e.target.value })}
-            />
-          </Field>
-          <Field label="詳細內容">
-            <Textarea
-              value={form.content}
-              onChange={(e) => setForm({ ...form, content: e.target.value })}
-            />
-          </Field>
+      {/* 備註事項 */}
+      <Card className="mt-3">
+        <SectionTitle>備註事項</SectionTitle>
+        <div className="space-y-3 p-4">
+          <Info label="重要事項記錄" value={<span className="whitespace-pre-wrap">{data.content}</span>} />
+          <Info
+            label="協調事項 / 監造指示"
+            value={<span className="whitespace-pre-wrap">{data.coordinationNotes}</span>}
+          />
+          <Info label="工安事項" value={<span className="whitespace-pre-wrap">{data.safetyNotes}</span>} />
         </div>
-      </Modal>
+      </Card>
 
-      {/* 上傳照片 */}
       <Modal
         open={photoOpen}
         onClose={() => setPhotoOpen(false)}
@@ -325,11 +370,7 @@ export function ConstructionLogDetail() {
             />
           </Field>
           <Field label="選擇照片" required error={photoError}>
-            <Input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setPicked(e.target.files?.[0] ?? null)}
-            />
+            <Input type="file" accept="image/*" onChange={(e) => setPicked(e.target.files?.[0] ?? null)} />
           </Field>
           <p className="flex items-center gap-1 text-xs text-gray-400">
             <Camera className="h-3.5 w-3.5" /> 支援手機拍照直接上傳

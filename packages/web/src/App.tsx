@@ -16,6 +16,7 @@ import { Clients } from './pages/Clients';
 import { ClientDetail } from './pages/ClientDetail';
 import { Staff } from './pages/Staff';
 import { ConstructionLogs } from './pages/ConstructionLogs';
+import { ConstructionLogForm } from './pages/ConstructionLogForm';
 import { ConstructionLogDetail } from './pages/ConstructionLogDetail';
 import { Photos } from './pages/Photos';
 import { QuotationList } from './pages/QuotationList';
@@ -58,7 +59,9 @@ export function App() {
           <Route path="/clients/:id" element={<ClientDetail />} />
           <Route path="/staff" element={<Staff />} />
           <Route path="/construction-logs" element={<ConstructionLogs />} />
+          <Route path="/construction-logs/new" element={<ConstructionLogForm />} />
           <Route path="/construction-logs/:id" element={<ConstructionLogDetail />} />
+          <Route path="/construction-logs/:id/edit" element={<ConstructionLogForm />} />
           <Route path="/photos" element={<Photos />} />
           <Route path="/quotations" element={<QuotationList />} />
           <Route path="/quotations/new" element={<QuotationForm />} />

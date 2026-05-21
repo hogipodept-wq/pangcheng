@@ -14,6 +14,8 @@ import type {
   PhotoCategory,
   WeatherType,
   NotificationType,
+  InspectionResult,
+  LogStatus,
 } from './enums.js';
 
 export const ROLE_LABELS: Record<Role, string> = {
@@ -138,4 +140,16 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   warning: '警告',
   approval: '簽核',
   budget_alert: '預算警示',
+};
+
+export const INSPECTION_RESULT_LABELS: Record<InspectionResult, string> = {
+  pass: '合格',
+  fail: '不合格',
+  pending: '待檢查',
+  na: '不適用',
+};
+
+export const LOG_STATUS_LABELS: Record<LogStatus, string> = {
+  draft: '草稿',
+  submitted: '已提交',
 };
