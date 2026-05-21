@@ -1,0 +1,15 @@
+# Render 部署藍圖（Blueprint）
+# 於 render.com 使用「New + → Blueprint」連接本儲存庫即可自動部署。
+services:
+  - type: web
+    name: pangcheng-erp
+    runtime: node
+    plan: free
+    region: singapore
+    branch: claude/construction-erp-system-JARyU
+    buildCommand: corepack enable && pnpm install --prod=false && pnpm build
+    startCommand: pnpm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22.12.0"
