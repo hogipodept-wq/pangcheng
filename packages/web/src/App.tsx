@@ -57,7 +57,11 @@ export function App() {
           <Route path="/photos" element={<Photos />} />
           <Route
             path="/quotations"
-            element={<Placeholder title="報價管理" description="報價單建立、PDF 產出、簽核流程" />}
+            element={<Placeholder title="報價作業" description="報價單建立、PDF 產出、簽核流程" />}
+          />
+          <Route
+            path="/quotation-templates"
+            element={<Placeholder title="報價範本" description="常用報價項目範本管理" />}
           />
           <Route
             path="/finance"
@@ -75,6 +79,8 @@ export function App() {
             path="/reports"
             element={<Placeholder title="報表中心" description="採購統計、專案預算、零用金月報" />}
           />
+          <Route path="/permissions" element={<Settings defaultTab="users" />} />
+          <Route path="/company" element={<Settings defaultTab="company" />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Route>

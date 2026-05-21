@@ -59,7 +59,7 @@ export function Procurement() {
   return (
     <div>
       <PageHeader
-        title="採購管理"
+        title="採購中心"
         subtitle="採購單建立、廠商比價與收貨確認"
         actions={
           <Button onClick={() => navigate('/procurement/new')}>

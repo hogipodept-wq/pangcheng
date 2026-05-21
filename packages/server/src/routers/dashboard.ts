@@ -6,6 +6,8 @@ import {
   procurements,
   suppliers,
   clients,
+  staff,
+  projectBidItems,
   constructionLogs,
   inspectionPhotos,
 } from '../schema.js';
@@ -16,6 +18,7 @@ export const dashboardRouter = router({
     const allProcurements = db.select().from(procurements).all();
     const allSuppliers = db.select().from(suppliers).all();
     const allClients = db.select().from(clients).all();
+    const allStaff = db.select().from(staff).all();
 
     const projectsByStatus = {
       planning: allProjects.filter((p) => p.status === 'planning').length,
@@ -72,7 +75,7 @@ export const dashboardRouter = router({
       .all();
 
     const activeProjects = allProjects
-      .filter((p) => p.status === 'in_progress')
+      .filter((p) => p.status === 'in_progress' || p.status === 'planning')
       .map((p) => {
         const spent = allProcurements
           .filter(
@@ -81,13 +84,24 @@ export const dashboardRouter = router({
           )
           .reduce((s, pr) => s + (pr.totalAmount ?? 0), 0);
         const ratio = p.budgetAmount > 0 ? spent / p.budgetAmount : 0;
+        const profit = (p.contractAmount ?? 0) - spent;
+        const margin = p.contractAmount > 0 ? profit / p.contractAmount : 0;
         return {
           id: p.id,
           code: p.code,
           name: p.name,
+          status: p.status,
+          contractAmount: p.contractAmount,
           budgetAmount: p.budgetAmount,
+          bidItemCount: db
+            .select()
+            .from(projectBidItems)
+            .where(eq(projectBidItems.projectId, p.id))
+            .all().length,
           spent,
           ratio,
+          profit,
+          margin,
         };
       });
 
@@ -97,6 +111,7 @@ export const dashboardRouter = router({
         procurements: allProcurements.length,
         suppliers: allSuppliers.length,
         clients: allClients.length,
+        staff: allStaff.length,
         photos: db.select().from(inspectionPhotos).all().length,
         logs: db.select().from(constructionLogs).all().length,
       },

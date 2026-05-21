@@ -422,7 +422,7 @@ function PasswordTab() {
   );
 }
 
-export function Settings() {
+export function Settings({ defaultTab }: { defaultTab?: 'company' | 'users' | 'password' }) {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
   const tabs = isAdmin
@@ -433,11 +433,17 @@ export function Settings() {
     users: '使用者管理',
     password: '修改密碼',
   };
-  const [tab, setTab] = useState<string>('company');
+  const initialTab =
+    defaultTab && (tabs as readonly string[]).includes(defaultTab) ? defaultTab : 'company';
+  const [tab, setTab] = useState<string>(initialTab);
+  const isPermissions = defaultTab === 'users';
 
   return (
     <div>
-      <PageHeader title="系統設定" subtitle="公司資料、帳號與密碼管理" />
+      <PageHeader
+        title={isPermissions ? '權限設定' : '公司設定'}
+        subtitle={isPermissions ? '使用者帳號、角色權限與密碼管理' : '公司基本資料與系統設定'}
+      />
       <div className="mb-3 flex flex-wrap gap-1 border-b border-gray-200">
         {tabs.map((t) => (
           <button

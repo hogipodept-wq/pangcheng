@@ -1,25 +1,27 @@
-import { useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard,
+  LayoutGrid,
+  Users,
+  FileText,
+  Files,
+  Building2,
+  Building,
   FolderKanban,
+  ShoppingCart,
+  Truck,
+  Landmark,
   ClipboardList,
   Camera,
   CalendarDays,
-  ShoppingCart,
-  Truck,
-  FileText,
-  Building2,
-  Calculator,
-  Wallet,
   BarChart3,
-  Users,
-  Settings,
+  ShieldCheck,
   Bell,
   LogOut,
   Menu,
   X,
-  HardHat,
+  PanelLeft,
+  type LucideIcon,
 } from 'lucide-react';
 import { trpc } from '../trpc';
 import { useAuth } from '../auth';
@@ -29,57 +31,26 @@ import { cn } from './ui';
 interface NavItem {
   to: string;
   label: string;
-  icon: typeof LayoutDashboard;
+  icon: LucideIcon;
   end?: boolean;
 }
-interface NavGroup {
-  title: string;
-  items: NavItem[];
-}
 
-const navGroups: NavGroup[] = [
-  {
-    title: '總覽',
-    items: [{ to: '/', label: '儀表板', icon: LayoutDashboard, end: true }],
-  },
-  {
-    title: '工程管理',
-    items: [
-      { to: '/projects', label: '專案管理', icon: FolderKanban },
-      { to: '/construction-logs', label: '施工日誌', icon: ClipboardList },
-      { to: '/photos', label: '施工照片', icon: Camera },
-      { to: '/calendar', label: '行事曆', icon: CalendarDays },
-    ],
-  },
-  {
-    title: '採購與廠商',
-    items: [
-      { to: '/procurement', label: '採購管理', icon: ShoppingCart },
-      { to: '/suppliers', label: '廠商管理', icon: Truck },
-    ],
-  },
-  {
-    title: '業務往來',
-    items: [
-      { to: '/quotations', label: '報價管理', icon: FileText },
-      { to: '/clients', label: '業主管理', icon: Building2 },
-    ],
-  },
-  {
-    title: '財務',
-    items: [
-      { to: '/finance', label: '財務作業', icon: Calculator },
-      { to: '/petty-cash', label: '零用金', icon: Wallet },
-      { to: '/reports', label: '報表中心', icon: BarChart3 },
-    ],
-  },
-  {
-    title: '人事與設定',
-    items: [
-      { to: '/staff', label: '人員管理', icon: Users },
-      { to: '/settings', label: '系統設定', icon: Settings },
-    ],
-  },
+const NAV: NavItem[] = [
+  { to: '/', label: '儀表板', icon: LayoutGrid, end: true },
+  { to: '/staff', label: '人員管理', icon: Users },
+  { to: '/quotations', label: '報價作業', icon: FileText },
+  { to: '/quotation-templates', label: '報價範本', icon: Files },
+  { to: '/clients', label: '客戶管理', icon: Building2 },
+  { to: '/projects', label: '專案管理', icon: FolderKanban },
+  { to: '/procurement', label: '採購中心', icon: ShoppingCart },
+  { to: '/suppliers', label: '廠商管理', icon: Truck },
+  { to: '/finance', label: '財務作業', icon: Landmark },
+  { to: '/construction-logs', label: '施工日誌', icon: ClipboardList },
+  { to: '/photos', label: '施工照片', icon: Camera },
+  { to: '/calendar', label: '行事曆', icon: CalendarDays },
+  { to: '/reports', label: '報表中心', icon: BarChart3 },
+  { to: '/permissions', label: '權限設定', icon: ShieldCheck },
+  { to: '/company', label: '公司設定', icon: Building },
 ];
 
 function NotificationBell() {
@@ -101,7 +72,7 @@ function NotificationBell() {
       >
         <Bell className="h-5 w-5" />
         {(count.data ?? 0) > 0 && (
-          <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-600 px-1 text-[10px] font-bold text-white">
+          <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-600 px-1 text-[10px] font-bold text-white">
             {count.data}
           </span>
         )}
@@ -128,7 +99,7 @@ function NotificationBell() {
                   key={n.id}
                   className={cn(
                     'border-b border-gray-50 px-4 py-2.5 last:border-0',
-                    !n.read && 'bg-brand-50/40',
+                    !n.read && 'bg-brand-50/50',
                   )}
                 >
                   <div className="flex items-center justify-between">
@@ -153,7 +124,10 @@ function NotificationBell() {
 export function Layout() {
   const { user, refetch } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+
   const logout = trpc.auth.logout.useMutation({
     onSuccess: () => {
       refetch();
@@ -161,52 +135,107 @@ export function Layout() {
     },
   });
 
+  const pageTitle = useMemo(() => {
+    const path = location.pathname;
+    const match = NAV.filter((n) => (n.end ? path === n.to : path === n.to || path.startsWith(n.to + '/')))
+      .sort((a, b) => b.to.length - a.to.length)[0];
+    return match?.label ?? '營造工程 ERP';
+  }, [location.pathname]);
+
+  const sidebarWidth = collapsed ? 'w-[68px]' : 'w-60';
+
   return (
     <div className="flex h-full">
       {/* 側邊欄 */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex w-60 flex-col bg-ink text-gray-300 transition-transform lg:static lg:translate-x-0',
+          'fixed inset-y-0 left-0 z-40 flex flex-col bg-sidebar text-gray-300 transition-all duration-200 lg:static lg:translate-x-0',
+          sidebarWidth,
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
         )}
       >
-        <div className="flex items-center gap-2.5 border-b border-ink-line px-5 py-4">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600">
-            <HardHat className="h-5 w-5 text-white" />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-white">磐承營造工程</p>
-            <p className="text-[10px] tracking-widest text-gray-500">CONSTRUCTION ERP</p>
-          </div>
-        </div>
-        <nav className="flex-1 overflow-y-auto px-3 py-4">
-          {navGroups.map((group) => (
-            <div key={group.title} className="mb-4">
-              <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-600">
-                {group.title}
-              </p>
-              {group.items.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.end}
-                  onClick={() => setMobileOpen(false)}
-                  className={({ isActive }) =>
-                    cn(
-                      'mb-0.5 flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors',
-                      isActive
-                        ? 'bg-brand-600 font-medium text-white'
-                        : 'text-gray-400 hover:bg-ink-soft hover:text-white',
-                    )
-                  }
-                >
-                  <item.icon className="h-4 w-4 shrink-0" />
-                  {item.label}
-                </NavLink>
-              ))}
+        {/* Logo */}
+        <div
+          className={cn(
+            'flex h-16 items-center gap-2.5 border-b border-sidebar-line px-4',
+            collapsed && 'justify-center px-0',
+          )}
+        >
+          <button
+            onClick={() => setCollapsed((v) => !v)}
+            className="hidden shrink-0 rounded-md p-1.5 text-gray-500 hover:bg-sidebar-soft hover:text-white lg:block"
+            title={collapsed ? '展開選單' : '收合選單'}
+          >
+            <PanelLeft className="h-[18px] w-[18px]" />
+          </button>
+          {!collapsed && (
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-600">
+                <Building2 className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-[15px] font-bold text-white">營造工程 ERP</span>
             </div>
+          )}
+          {collapsed && (
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600">
+              <Building2 className="h-5 w-5 text-white" />
+            </div>
+          )}
+        </div>
+
+        {/* 導覽 */}
+        <nav className="flex-1 overflow-y-auto px-3 py-3">
+          {NAV.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              onClick={() => setMobileOpen(false)}
+              title={collapsed ? item.label : undefined}
+              className={({ isActive }) =>
+                cn(
+                  'mb-0.5 flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
+                  collapsed && 'justify-center px-0',
+                  isActive
+                    ? 'bg-white font-semibold text-ink'
+                    : 'text-gray-400 hover:bg-sidebar-soft hover:text-white',
+                )
+              }
+            >
+              <item.icon className="h-[18px] w-[18px] shrink-0" />
+              {!collapsed && item.label}
+            </NavLink>
           ))}
         </nav>
+
+        {/* 使用者 */}
+        <div
+          className={cn(
+            'flex items-center gap-2.5 border-t border-sidebar-line px-4 py-3',
+            collapsed && 'justify-center px-0',
+          )}
+        >
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-600 text-sm font-bold text-white">
+            {user?.name?.[0] ?? '?'}
+          </div>
+          {!collapsed && (
+            <>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-white">{user?.name}</p>
+                <p className="truncate text-[11px] text-gray-500">
+                  {ROLE_LABELS[(user?.role ?? 'user') as Role]}
+                </p>
+              </div>
+              <button
+                onClick={() => logout.mutate()}
+                title="登出"
+                className="rounded-md p-1.5 text-gray-500 hover:bg-sidebar-soft hover:text-white"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </>
+          )}
+        </div>
       </aside>
 
       {mobileOpen && (
@@ -218,34 +247,17 @@ export function Layout() {
 
       {/* 主內容 */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-2.5 sm:px-6">
-          <button
-            className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 lg:hidden"
-            onClick={() => setMobileOpen((v) => !v)}
-          >
-            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
-          <div className="flex flex-1 items-center justify-end gap-2">
-            <NotificationBell />
-            <div className="flex items-center gap-2.5 border-l border-gray-200 pl-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-700">
-                {user?.name?.[0] ?? '?'}
-              </div>
-              <div className="hidden text-right sm:block">
-                <p className="text-sm font-medium leading-tight text-ink">{user?.name}</p>
-                <p className="text-[11px] leading-tight text-gray-400">
-                  {ROLE_LABELS[(user?.role ?? 'user') as Role]}
-                </p>
-              </div>
-              <button
-                onClick={() => logout.mutate()}
-                title="登出"
-                className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-brand-600"
-              >
-                <LogOut className="h-4 w-4" />
-              </button>
-            </div>
+        <header className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 sm:px-6">
+          <div className="flex items-center gap-2">
+            <button
+              className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 lg:hidden"
+              onClick={() => setMobileOpen((v) => !v)}
+            >
+              {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+            <h1 className="text-base font-bold text-ink">{pageTitle}</h1>
           </div>
+          <NotificationBell />
         </header>
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           <Outlet />
