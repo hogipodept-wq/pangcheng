@@ -5,6 +5,7 @@ import { Spinner } from './components/ui';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { Projects } from './pages/Projects';
+import { ProjectWizard } from './pages/ProjectWizard';
 import { ProjectDetail } from './pages/ProjectDetail';
 import { Procurement } from './pages/Procurement';
 import { ProcurementForm } from './pages/ProcurementForm';
@@ -42,6 +43,7 @@ export function App() {
         <Route element={<Layout />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/projects" element={<Projects />} />
+          <Route path="/projects/new" element={<ProjectWizard />} />
           <Route path="/projects/:id" element={<ProjectDetail />} />
           <Route path="/procurement" element={<Procurement />} />
           <Route path="/procurement/new" element={<ProcurementForm />} />

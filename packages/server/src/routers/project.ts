@@ -15,15 +15,39 @@ import { PROJECT_STATUSES, PERSONNEL_ROLES, TASK_STATUSES } from '@pangcheng/sha
 
 const projectInput = z.object({
   name: z.string().min(1, '請輸入專案名稱'),
+  code: z.string().optional().nullable(),
+  projectType: z.string().optional().nullable(),
   clientId: z.number().nullable().optional(),
+  clientContactInfo: z.string().optional().nullable(),
+  designUnit: z.string().optional().nullable(),
+  supervisionUnit: z.string().optional().nullable(),
   status: z.enum(PROJECT_STATUSES).default('planning'),
   address: z.string().optional().nullable(),
   manager: z.string().optional().nullable(),
   startDate: z.string().optional().nullable(),
   endDate: z.string().optional().nullable(),
+  duration: z.string().optional().nullable(),
   contractAmount: z.number().default(0),
   budgetAmount: z.number().default(0),
   description: z.string().optional().nullable(),
+});
+
+const personnelInput = z.object({
+  name: z.string().min(1),
+  role: z.enum(PERSONNEL_ROLES).default('engineer'),
+  phone: z.string().optional().nullable(),
+  license: z.string().optional().nullable(),
+  note: z.string().optional().nullable(),
+});
+
+const bidItemInput = z.object({
+  itemNo: z.string().optional().nullable(),
+  name: z.string().min(1),
+  spec: z.string().optional().nullable(),
+  unit: z.string().optional().nullable(),
+  quantity: z.number().default(0),
+  unitPrice: z.number().default(0),
+  note: z.string().optional().nullable(),
 });
 
 function genProjectCode(): string {
@@ -95,18 +119,36 @@ export const projectRouter = router({
     };
   }),
 
-  create: protectedProcedure.input(projectInput).mutation(({ input }) =>
-    db
-      .insert(projects)
-      .values({ ...input, code: genProjectCode() })
-      .returning()
-      .get(),
-  ),
+  create: protectedProcedure
+    .input(
+      projectInput.extend({
+        personnel: z.array(personnelInput).default([]),
+        bidItems: z.array(bidItemInput).default([]),
+      }),
+    )
+    .mutation(({ input }) => {
+      const { personnel, bidItems, code, ...data } = input;
+      const created = db
+        .insert(projects)
+        .values({ ...data, code: code?.trim() || genProjectCode() })
+        .returning()
+        .get();
+      for (const p of personnel) {
+        db.insert(projectPersonnel).values({ ...p, projectId: created.id }).run();
+      }
+      for (const b of bidItems) {
+        db.insert(projectBidItems)
+          .values({ ...b, projectId: created.id, amount: b.quantity * b.unitPrice })
+          .run();
+      }
+      return created;
+    }),
 
   update: protectedProcedure
     .input(projectInput.extend({ id: z.number() }))
     .mutation(({ input }) => {
-      const { id, ...data } = input;
+      const { id, code, ...rest } = input;
+      const data = code ? { ...rest, code } : rest;
       db.update(projects).set(data).where(eq(projects.id, id)).run();
       return { ok: true };
     }),
@@ -121,15 +163,7 @@ export const projectRouter = router({
 
   // 專案人員
   addPersonnel: protectedProcedure
-    .input(
-      z.object({
-        projectId: z.number(),
-        name: z.string().min(1),
-        role: z.enum(PERSONNEL_ROLES).default('engineer'),
-        phone: z.string().optional().nullable(),
-        note: z.string().optional().nullable(),
-      }),
-    )
+    .input(personnelInput.extend({ projectId: z.number() }))
     .mutation(({ input }) => db.insert(projectPersonnel).values(input).returning().get()),
 
   deletePersonnel: protectedProcedure

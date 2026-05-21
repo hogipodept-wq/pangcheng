@@ -225,10 +225,15 @@ export function ProjectDetail() {
             <SectionTitle>專案資訊</SectionTitle>
             <div className="grid grid-cols-2 gap-4 p-4 lg:grid-cols-3">
               <Info label="專案經理" value={data.manager} />
-              <Info label="工程地址" value={data.address} />
+              <Info label="工程類型" value={data.projectType} />
               <Info label="業主" value={data.clientName} />
+              <Info label="業主聯絡方式" value={data.clientContactInfo} />
+              <Info label="設計單位" value={data.designUnit} />
+              <Info label="監造單位" value={data.supervisionUnit} />
+              <Info label="工程地址" value={data.address} />
               <Info label="開工日" value={formatDate(data.startDate)} />
               <Info label="完工日" value={formatDate(data.endDate)} />
+              <Info label="預計工期" value={data.duration} />
               <Info label="建立日期" value={formatDate(data.createdAt)} />
               <div className="col-span-2 lg:col-span-3">
                 <Info label="專案說明" value={data.description} />
