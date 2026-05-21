@@ -1,0 +1,21 @@
+{
+  "name": "pangcheng-erp",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "磐承營造工程 ERP 系統",
+  "scripts": {
+    "dev": "concurrently -n server,web -c blue,green \"pnpm --filter @pangcheng/server dev\" \"pnpm --filter @pangcheng/web dev\"",
+    "build": "pnpm --filter @pangcheng/web build",
+    "start": "pnpm --filter @pangcheng/server start",
+    "db:generate": "pnpm --filter @pangcheng/server db:generate",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["better-sqlite3", "esbuild"]
+  },
+  "packageManager": "pnpm@10.33.0"
+}
