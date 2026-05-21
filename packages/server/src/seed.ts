@@ -16,6 +16,8 @@ import {
   procurementQuotes,
   staff,
   constructionLogs,
+  quotations,
+  quotationItems,
   accounts,
   notifications,
 } from './schema.js';
@@ -173,6 +175,66 @@ export function seedDatabase(): void {
       { projectId: 1, date: '2026-05-12', weather: 'sunny', temperature: '28°C', workforce: 24, summary: '地下二層樓板鋼筋綁紮', content: '完成 B2 東側樓板鋼筋綁紮約 60%，明日續作西側。', recordedBy: '陳主任' },
       { projectId: 1, date: '2026-05-13', weather: 'cloudy', temperature: '26°C', workforce: 22, summary: '地下二層樓板混凝土澆置', content: 'B2 東側樓板混凝土澆置完成，養護中。', recordedBy: '陳主任' },
       { projectId: 2, date: '2026-05-13', weather: 'rainy', temperature: '24°C', workforce: 12, summary: '舊建物拆除作業', content: '因雨暫停外牆拆除，改進行室內隔間清運。', recordedBy: '李工程師' },
+    ])
+    .run();
+
+  // 報價單
+  db.insert(quotations)
+    .values([
+      {
+        code: 'Q2026-001',
+        projectName: '迪化街老宅延壽補強工程',
+        description: '歷史建物結構補強與屋頂防水延壽工程',
+        status: 'submitted',
+        quoteDate: '2026-05-10',
+        validUntil: '2026-06-09',
+        duration: '120 工作天',
+        location: '台北市大同區迪化街一段 200 號',
+        clientId: 3,
+        clientName: '王志明',
+        clientContact: '王志明',
+        clientPhone: '0912-345-678',
+        subtotal: 2184000,
+        discountPercent: 0,
+        discountAmount: 0,
+        taxRate: 5,
+        taxAmount: 109200,
+        totalAmount: 2293200,
+        paymentTerms: '簽約30%、開工30%、完工30%、驗收10%',
+        terms: '1. 本報價單有效期限為報價日起30天。\n2. 付款方式依合約約定辦理。\n3. 如有追加減工程，另行議價。\n4. 以上報價不含營業稅。',
+        createdBy: '陳采購',
+      },
+      {
+        code: 'Q2026-002',
+        projectName: '內湖商辦室內裝修工程',
+        description: '辦公室空間木作與油漆裝修',
+        status: 'draft',
+        quoteDate: '2026-05-18',
+        validUntil: '2026-06-17',
+        duration: '60 工作天',
+        location: '台北市內湖區',
+        clientName: '富鼎建設股份有限公司',
+        clientContact: '張經理',
+        clientPhone: '02-8780-5000',
+        subtotal: 1920000,
+        discountPercent: 0,
+        discountAmount: 0,
+        taxRate: 5,
+        taxAmount: 96000,
+        totalAmount: 2016000,
+        terms: '1. 本報價單有效期限為報價日起30天。\n2. 付款方式依合約約定辦理。\n3. 如有追加減工程，另行議價。\n4. 以上報價不含營業稅。',
+        createdBy: '系統管理員',
+      },
+    ])
+    .run();
+
+  db.insert(quotationItems)
+    .values([
+      { quotationId: 1, category: '結構工程', name: '結構補強', spec: '碳纖維補強工法', unit: '式', quantity: 1, unitPrice: 1800000, amount: 1800000 },
+      { quotationId: 1, category: '裝修工程', name: '屋頂防水', spec: 'PU 防水塗料', unit: 'm2', quantity: 320, unitPrice: 1200, amount: 384000 },
+      { quotationId: 2, category: '拆除工程', name: '舊裝修拆除清運', spec: '含廢棄物清運', unit: '式', quantity: 1, unitPrice: 200000, amount: 200000 },
+      { quotationId: 2, category: '裝修工程', name: '木作裝修', spec: '系統櫃與隔間', unit: '坪', quantity: 80, unitPrice: 18000, amount: 1440000 },
+      { quotationId: 2, category: '裝修工程', name: '油漆工程', spec: '乳膠漆', unit: '坪', quantity: 80, unitPrice: 3500, amount: 280000 },
     ])
     .run();
 

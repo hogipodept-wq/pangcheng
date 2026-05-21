@@ -18,6 +18,9 @@ import { Staff } from './pages/Staff';
 import { ConstructionLogs } from './pages/ConstructionLogs';
 import { ConstructionLogDetail } from './pages/ConstructionLogDetail';
 import { Photos } from './pages/Photos';
+import { QuotationList } from './pages/QuotationList';
+import { QuotationForm } from './pages/QuotationForm';
+import { QuotationDetail } from './pages/QuotationDetail';
 import { Settings } from './pages/Settings';
 import { Placeholder } from './pages/Placeholder';
 import { NotFound } from './pages/NotFound';
@@ -57,10 +60,10 @@ export function App() {
           <Route path="/construction-logs" element={<ConstructionLogs />} />
           <Route path="/construction-logs/:id" element={<ConstructionLogDetail />} />
           <Route path="/photos" element={<Photos />} />
-          <Route
-            path="/quotations"
-            element={<Placeholder title="報價作業" description="報價單建立、PDF 產出、簽核流程" />}
-          />
+          <Route path="/quotations" element={<QuotationList />} />
+          <Route path="/quotations/new" element={<QuotationForm />} />
+          <Route path="/quotations/:id" element={<QuotationDetail />} />
+          <Route path="/quotations/:id/edit" element={<QuotationForm />} />
           <Route
             path="/quotation-templates"
             element={<Placeholder title="報價範本" description="常用報價項目範本管理" />}

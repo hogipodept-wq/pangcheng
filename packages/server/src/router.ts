@@ -6,6 +6,7 @@ import { projectRouter } from './routers/project.js';
 import { clientRouter } from './routers/client.js';
 import { supplierRouter } from './routers/supplier.js';
 import { procurementRouter } from './routers/procurement.js';
+import { quotationRouter } from './routers/quotation.js';
 import { staffRouter } from './routers/staff.js';
 import { constructionLogRouter } from './routers/constructionLog.js';
 import { inspectionPhotoRouter } from './routers/inspectionPhoto.js';
@@ -20,6 +21,7 @@ export const appRouter = router({
   clients: clientRouter,
   supplier: supplierRouter,
   procurement: procurementRouter,
+  quotation: quotationRouter,
   staff: staffRouter,
   constructionLog: constructionLogRouter,
   inspectionPhoto: inspectionPhotoRouter,
